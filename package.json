@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "A youtube backend clone",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "dev"  : " nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -11,5 +13,8 @@
     "shubham"
   ],
   "author": "Shubham Tyagi",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
 }
