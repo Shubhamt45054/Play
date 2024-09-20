@@ -85,7 +85,7 @@ userSchema.methods.isPasswordCorrect = async function(password){
 // generating access token 
 userSchema.methods.generateAccessToken = function(){
     // jwt.sign to generate token ...
-    // (payload ,secret token , expriresIn:  )
+    // (payload ,secret token , {expriresIn:  } // yhe hamsea isme hi aygea object ki firm mei)
     return jwt.sign(
         {
             _id: this._id,
@@ -114,5 +114,6 @@ userSchema.methods.generateRefreshToken = function(){
         }
     )
 }
+
 
 export const User = mongoose.model("User", userSchema)

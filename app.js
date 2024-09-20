@@ -27,8 +27,14 @@ app.use(express.static("public"))
 app.use(cookieParser())
 // its and configuration...
 
+// routes import 
 
+import userRoutes from './src/routes/user.routes.js'
 
+// routes decleration
+
+// user abb prefix, http://localhost:8000/api/v1/users/register
+app.use('/api/v1/users',userRoutes);
 
 
 
