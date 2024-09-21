@@ -2,21 +2,25 @@
 import connectDB from "./src/db/index.js";
 import {app} from './app.js'
 
-// import dotenv from "dotenv"
-// dotenv.config({
-//     path: './.env'
-// })
+import dotenv from "dotenv"
+dotenv.config({
+    path: './.env'
+})
 
-import 'dotenv/config'
+// import 'dotenv/config'
 
 // listen for error also
 // app.on();
 // kisi event ke liye listen karo error 
 
 // ascryonous methods return the promise also
+
+// console.log(process.env.CLOUDINARY_API_KEY);
+// console.log(process.env.CLOUDINARY_API_SECRET);
+
 connectDB()
 .then(() => {
-    app.listen(process.env.PORT || 7000, () => {
+    app.listen(process.env.PORT || 5000, () => {
         console.log(`⚙️ Server is running at port : ${process.env.PORT}`);
     })
 })

@@ -1,10 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-// // import {ApiError} from "../utils/ApiError.js"
-// // import { User} from "../models/user.model.js"
-// // import {uploadOnCloudinary} from "../utils/cloudinary.js"
-// // import { ApiResponse } from "../utils/ApiResponse.js";
-// // import jwt from "jsonwebtoken"
-// // import mongoose from "mongoose";
+import {ApiError} from "../utils/ApiError.js"
+import { User} from "../models/user.model.js"
+import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import { ApiResponse } from "../utils/ApiResponse.js";
+// import jwt from "jsonwebtoken"
+// import mongoose from "mongoose";
 
 
 // const generateAccessAndRefereshTokens = asy nc(userId) =>{
@@ -37,16 +37,24 @@ const registerUser = asyncHandler( async (req, res) => {
     // check for user creation
     // return res
 
-
+    // json se data yeh form se data 
     const {fullName, email, username, password } = req.body
     //console.log("email: ", email);
 
+    // checking if empty tho nhi aya kuchh...
     if (
+        // ek bhi nee return kiya tho true hogya
         [fullName, email, username, password].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required")
     }
+// can check if email has @ or not ...
 
+// now to check if user already exist 
+    //  User.findOne({email})
+    // User.findOne({username})
+
+    // now to use operator we can use $ sign 
     const existedUser = await User.findOne({
         $or: [{ username }, { email }]
     })
@@ -54,29 +62,39 @@ const registerUser = asyncHandler( async (req, res) => {
     if (existedUser) {
         throw new ApiError(409, "User with email or username already exists")
     }
+
+    // print karke ke dekho iskoo..
     //console.log(req.files);
 
+    // .files ka access milega multer se ...
+    // ham file ka path chathe haii ...
     const avatarLocalPath = req.files?.avatar[0]?.path;
     //const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
     let coverImageLocalPath;
+    // isArray check karne ke liye ki proper array aya yeh nhi ...
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLocalPath = req.files.coverImage[0].path
     }
     
 
+    // avatar agar nhi hai thoo ...
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required")
     }
 
+    // uploading on cloudinary ... 
+    // console.log(avatarLocalPath);
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
-
+    // console.log(avatar);
     if (!avatar) {
-        throw new ApiError(400, "Avatar file is required")
+        throw new ApiError(400, "Avatar file is req")
     }
    
+// kafi data aata hai , tho ek baar print karke jarur dekhe..
 
+// time lagega db mei jane mei ...
     const user = await User.create({
         fullName,
         avatar: avatar.url,
@@ -85,7 +103,12 @@ const registerUser = asyncHandler( async (req, res) => {
         password,
         username: username.toLowerCase()
     })
-
+    // user ko mongodb autmoatically _id de deta hai..
+// to check user bana yeh nhi ... 
+// findById se chekc karne kar sakte ki user hai yeh nhi
+// .select use karke ham select kar sakte 
+// kya select nhi karnaa ..
+// .select() is method ..
     const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
     )
@@ -95,6 +118,7 @@ const registerUser = asyncHandler( async (req, res) => {
     }
 
     return res.status(201).json(
+        //status code , data , message 
         new ApiResponse(200, createdUser, "User registered Successfully")
     )
 
