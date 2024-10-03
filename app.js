@@ -31,6 +31,8 @@ app.use(cookieParser())
 
 import userRoutes from './src/routes/user.routes.js'
 
+
+
 // routes decleration
 
 // user abb prefix, http://localhost:8000/api/v1/users/register
