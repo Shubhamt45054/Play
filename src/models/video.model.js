@@ -1,6 +1,6 @@
 import mongoose, {Schema} from "mongoose";
 
-// aggeration pipeine
+// apginate karne ke ability 
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const videoSchema = new Schema(
