@@ -45,6 +45,10 @@ const userSchema = new Schema(
             // agar nhi diya gya tho message print hoga...
             required: [true, 'Password is required']
         },
+        description: {
+         type: String,
+         default: "",
+        },
         refreshToken: {
             type: String
         }

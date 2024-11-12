@@ -19,7 +19,6 @@ const videoSchema = new Schema(
         },
         description: {
             type: String, 
-            required: true
         },
         duration: {
             // khud chiye 
@@ -37,7 +36,8 @@ const videoSchema = new Schema(
         },
         owner: {
             type: Schema.Types.ObjectId,
-            ref: "User"
+            ref: "User",
+            required:true 
         }
 
     }, 

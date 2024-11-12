@@ -1,21 +1,26 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js"
 import { User} from "../models/user.model.js"
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import {uploadOnCloudinary,
+        deleteImageOnCloudinary
+} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose";
 
 
 // big names help in readibility 
+
 const generateAccessAndRefereshTokens = async (userId) =>{
     try {
+        // isi help se hamne user mei add kar diye tokens apne
         const user = await User.findById(userId)
         const accessToken = user.generateAccessToken()
         const refreshToken = user.generateRefreshToken()
 
         // adding value in object
         user.refreshToken = refreshToken
+
         // user.save methods in mongodb
         // after that mongoose model kicks in
         // so password needed
@@ -23,8 +28,6 @@ const generateAccessAndRefereshTokens = async (userId) =>{
         await user.save({ validateBeforeSave: false })
 
         return {accessToken, refreshToken}
-
-
     } catch (error) {
         throw new ApiError(500, "Something went wrong while generating referesh and access token")
     }
@@ -50,6 +53,7 @@ const registerUser = asyncHandler( async (req, res) => {
     // checking if empty tho nhi aya kuchh...
     if (
         // ek bhi nee return kiya tho true hogya
+        // some mei ek bhi shi huwa tho return kar denga ...
         [fullName, email, username, password].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required")
@@ -82,13 +86,10 @@ const registerUser = asyncHandler( async (req, res) => {
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLocalPath = req.files.coverImage[0].path
     }
-    
-
     // avatar agar nhi hai thoo ...
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is required")
     }
-
     // uploading on cloudinary ... 
     // console.log(avatarLocalPath);
     const avatar = await uploadOnCloudinary(avatarLocalPath)
@@ -97,7 +98,6 @@ const registerUser = asyncHandler( async (req, res) => {
     if (!avatar) {
         throw new ApiError(400, "Avatar file is req")
     }
-   
 // kafi data aata hai , tho ek baar print karke jarur dekhe..
 
 // time lagega db mei jane mei ...
@@ -109,6 +109,9 @@ const registerUser = asyncHandler( async (req, res) => {
         password,
         username: username.toLowerCase()
     })
+
+    // await deleteImageOnCloudinary(avatar.url); wokrking ...
+
     // user ko mongodb autmoatically _id de deta hai..
 // to check user bana yeh nhi ... 
 // findById se chekc karne kar sakte ki user hai yeh nhi
@@ -173,8 +176,11 @@ const loginUser = asyncHandler(async (req, res) =>{
    if (!isPasswordValid) {
     throw new ApiError(401, "Invalid user credentials")
     }
-
+    // after this hamne tokens add kar diye 
+    // but hamre wala jo user hai vo phale hi liya tha tho usme nhi hai..
    const {accessToken, refreshToken} = await generateAccessAndRefereshTokens(user._id)
+
+//    isliye dubra chiye user 
 
    // now current situation kya hai ki
    // jo current user hai hamre pass , uspe access token or refres token
@@ -217,6 +223,7 @@ const loginUser = asyncHandler(async (req, res) =>{
 // referse token ko bhi hatna hogaa...
 
 const logoutUser = asyncHandler(async(req, res) => {
+    // verifyjwt se aya hai yeh tho , user,._id 
     await User.findByIdAndUpdate(
         req.user._id,
         {
@@ -321,6 +328,7 @@ const changeCurrentPassword = asyncHandler(async(req, res) => {
 
 const getCurrentUser = asyncHandler(async(req, res) => {
     // jab middleware lagega tho req.user aagya hamare pass ...
+    console.log("current user");
     return res
     .status(200)
     .json(new ApiResponse(
@@ -331,30 +339,42 @@ const getCurrentUser = asyncHandler(async(req, res) => {
 })
 
 const updateAccountDetails = asyncHandler(async(req, res) => {
-    const {fullName, email} = req.body
+    const { fullName, email, username, description } = req.body;
 
-    if (!fullName || !email) {
-        throw new ApiError(400, "All fields are required")
+    if (!fullName && !email && !username && !description) {
+      throw new ApiError(400, "At least one Change Required");
     }
-
-    const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                fullName,
-                email: email
-            }
-        },
-        {new: true}
-        
-    ).select("-password")
-
-    // ek aur methoda hai 
-    // ek aur call karke change kar sakte hoo ....
-
+  
+    const user = await User.findById(req.user?._id);
+  
+    if (fullName) user.fullName = fullName;
+  
+    if (email) user.email = email;
+  
+    if (description) user.description = description;
+  
+    if (username) {
+      const isExists = await User.find({ username });
+      if (isExists?.length > 0) {
+        throw new ApiError(400, "Username not available");
+      } else {
+        user.username = username;
+      }
+    }
+  
+    const updatedUserData = await user.save();
+  
+    if (!updatedUserData) {
+      new ApiError(500, "Error while Updating User Data");
+    }
+  
+    delete updatedUserData.password;
+  
     return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"))
+      .status(200)
+      .json(
+        new ApiResponse(200, updatedUserData, "Profile updated Successfully")
+      );
 });
 
 
@@ -457,6 +477,7 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {
             // left join 
             // to find the subsribers ...
             // loop up dhudne ke kaam aata hai ..
+            // this gives Subscribers of channel
             $lookup: {
                 from: "subscriptions",
                 localField: "_id",
@@ -465,6 +486,7 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {
             }
         },
         {
+            // this gives subcriptions of channel
             $lookup: {
                 from: "subscriptions",
                 localField: "_id",
@@ -510,7 +532,8 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {
     // what type does aggreagte returns ...
     // array with multiple { }
     // for our case , its only return one object 
-    console.log(channel);
+    // console.log("users  get user Profile");
+    // console.log(channel);
     if (!channel?.length) {
         throw new ApiError(404, "channel does not exists")
     }
@@ -531,37 +554,54 @@ const getWatchHistory = asyncHandler(async(req, res) => {
                // _id : req.user.id not work
                // as this codes directly goes to mongodb
                // not using mongoose
-                _id: new mongoose.Types.ObjectId(req.user._id)
+                _id: new mongoose.Types.ObjectId(req.user?._id)
             }
         },
         {
+            // left outer join between two collections, in this case, "users" and "videos".
             $lookup: { 
+                
                 from: "videos",
                 localField: "watchHistory",
                 foreignField: "_id",
                 as: "watchHistory",
-                // sub pipleline
+
+                // videos ka data manga rhe hai jo video hamne dehki
+                // but video mei user bhi tho hai uski infoo bhi chiye
+                // sub pipleline thats why..
+
+                // sub pipleline 
+                // Additional operations on the "videos" documents
                 pipeline: [
                     {
+                         // abb jo watch histroy hai usme owner hai vo id hai
+                         // uska data chiye , but sara nhi 
+                         // so ek aur subpiple line lga ke ham project se limited data lenge 
                         $lookup: {
                             from: "users",
                             localField: "owner",
                             foreignField: "_id",
                             // phale se owner hai ...
                             as: "owner",
+
                             // iss pipleline ko bhar lga ke bhi dekhna ...
+                            // yeh jo user wala doucment hai uspe lagega..
                             pipeline: [
                                 {
                                     $project: {
                                         fullName: 1,
                                         username: 1,
                                         avatar: 1
+                                        //selected before they are returned as part of the watchHistory field.
                                     }
                                 }
                             ]
+                            // agar isko bhar use karenge tho 
+                            //  directly use $project after the outer lookup (i.e., after joining videos with watchHistory), 
                         }
                     },
                     {
+                        // maybe array is returented 
                         $addFields:{
                             owner:{
                                 $first:  "$owner"
@@ -584,6 +624,27 @@ const getWatchHistory = asyncHandler(async(req, res) => {
     )
 })
 
+const clearWatchHistory = asyncHandler(async (req, res) => {
+    // find karo id se watchhistory ko reset kar doo..
+    const isCleared = await User.findByIdAndUpdate(
+      new mongoose.Types.ObjectId(req.user?._id),
+      {
+        $set: {
+          watchHistory: [],
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (!isCleared) throw new ApiError(500, "Failed to clear history");
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], "History Cleared Successfully"));
+
+  });
+
 
 export {
     registerUser,
@@ -596,7 +657,8 @@ export {
     updateUserAvatar,
     updateUserCoverImage,
     getUserChannelProfile,
-    getWatchHistory
+    getWatchHistory,
+    clearWatchHistory
 }
 
 

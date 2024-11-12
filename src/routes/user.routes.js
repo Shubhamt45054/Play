@@ -10,11 +10,13 @@ import {
     updateUserCoverImage, 
     getUserChannelProfile, 
     getWatchHistory, 
-    updateAccountDetails
+    clearWatchHistory,
+    updateAccountDetails,
+    
 } from "../controllers/user.controller.js";
 
 import {upload} from "../middlewares/multer.middleware.js"
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT,checkUser } from "../middlewares/auth.middleware.js";
 
 
 const router = Router()
@@ -57,7 +59,9 @@ router.route("/cover-image").patch(verifyJWT, upload.single("coverImage"), updat
 
 // url se hai ...
 //    /c/: ke baad jo likhoge tab milega..
-router.route("/c/:username").get(verifyJWT, getUserChannelProfile)
-router.route("/history").get(verifyJWT, getWatchHistory)
+router.route("/c/:username").get(checkUser, getUserChannelProfile)
+router.route("/history")
+      .get(verifyJWT, getWatchHistory)
+      .delete(verifyJWT, clearWatchHistory);
 
 export default router
