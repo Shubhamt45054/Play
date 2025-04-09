@@ -1,5 +1,5 @@
 import mongoose, {Schema} from "mongoose";
-// directly taking mongoose.Schema .. 
+
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 
@@ -11,7 +11,6 @@ const userSchema = new Schema(
             unique: true,
             lowercase: true,
             trim: true, 
-            // using index make optimize in searxh 
             index: true
         },
         email: {
@@ -28,11 +27,11 @@ const userSchema = new Schema(
             index: true
         },
         avatar: {
-            type: String, // cloudinary url
+            type: String, 
             required: true,
         },
         coverImage: {
-            type: String, // cloudinary url
+            type: String, 
         },
         watchHistory: [
             {
@@ -42,7 +41,6 @@ const userSchema = new Schema(
         ],
         password: {
             type: String,
-            // agar nhi diya gya tho message print hoga...
             required: [true, 'Password is required']
         },
         description: {
@@ -52,44 +50,23 @@ const userSchema = new Schema(
         refreshToken: {
             type: String
         }
-
     },
     {
         timestamps: true
     }
 )
 
-// just event se phale chlta hai 
-// events fixed hai konse hai validate, save, updateone...
-// error function mai this ka reference nhi hota...
-// we need to the context 
-// middleware ke flag mei next hoga hi hoga ...
-
 userSchema.pre("save", async function (next) {
-
-    // we have this to check is field is modified
-    // we pass the filed we are checking in bracket ...
     if(!this.isModified("password")) return next();
-
-    // kya hash karna hai aur , number of salts .. mtlb hash rounds 
     this.password = await bcrypt.hash(this.password, 10)
     next()
 })
 
-// countom methods in schmea 
-// we adding property is Pass
-// then adding function to adding the method ..
 userSchema.methods.isPasswordCorrect = async function(password){
-    // its in alreday bcrypt
-    // time lagata hai ....
     return await bcrypt.compare(password, this.password)
 }
 
-// jwt kya hai , bearer token
-// generating access token 
 userSchema.methods.generateAccessToken = function(){
-    // jwt.sign to generate token ...
-    // (payload ,secret token , {expriresIn:  } // yhe hamsea isme hi aygea object ki firm mei)
     return jwt.sign(
         {
             _id: this._id,
@@ -104,9 +81,6 @@ userSchema.methods.generateAccessToken = function(){
     )
 }
 
-// generating refress token 
-// it have less information
-// it keeps refreshing ....
 userSchema.methods.generateRefreshToken = function(){
     return jwt.sign(
         {
@@ -118,6 +92,5 @@ userSchema.methods.generateRefreshToken = function(){
         }
     )
 }
-
 
 export const User = mongoose.model("User", userSchema)

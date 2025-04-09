@@ -25,14 +25,12 @@ import fs from "fs";
       order,
       userId,
     } = req.query;
-  
-    // filter video by given filters
+
     let filters = { isPublished: true };
 
     if (isValidObjectId(userId))
       filters.owner = new mongoose.Types.ObjectId(userId);
-  
-    // alag se pipline create kar di..
+
     let pipeline = [
       {
         $match: {
@@ -42,8 +40,7 @@ import fs from "fs";
     ];
   
     const sort = {};
-  
-    // if query is given filter the videos
+
     if (search) {
       const queryWords = search
         .trim()
@@ -94,8 +91,7 @@ import fs from "fs";
   
       sort.titleMatchWordCount = -1;
     }
-  
-    // sort the documents
+
     if (sortBy) {
       sort[sortBy] = parseInt(order);
     } else if (!search && !sortBy) {
@@ -107,8 +103,7 @@ import fs from "fs";
         ...sort,
       },
     });
-  
-    // fetch owner detail
+
     pipeline.push(
       {
         $lookup: {
@@ -132,18 +127,6 @@ import fs from "fs";
       }
     );
   
-    // pipeline.push({
-    //   $project: {
-    //     title: 1,
-    //     description: 1,
-    //     createdAt: 1,
-    //     titleMatchWordCount: 1,
-    //     descriptionMatchWordCount: 1,
-    //     owner: 1,
-    //   },
-    // });
-  
-    // console.log("pipeline: ",pipeline);
     const videoAggregate = Video.aggregate(pipeline);
   
     const options = {
@@ -167,8 +150,7 @@ import fs from "fs";
   });
 
 const getAllVideos = asyncHandler(async (req, res) => {
-    // const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
+  
     const { userId } = req.query;
 
   let filters = { isPublished: true };
@@ -221,13 +203,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
 });
 
 const publishAVideo = asyncHandler( async (req, res) => {
-    // TODO: get video, upload to cloudinary, create video
 
     const { title, description } = req.body;
 
     if (!title) throw new ApiError(400, "Title is Required");
-  
-    // fetch local video file path
+
     let videoFileLocalFilePath = null;
     if (req.files && req.files.videoFile && req.files.videoFile.length > 0) {
       videoFileLocalFilePath = req.files.videoFile[0].path;
@@ -235,7 +215,7 @@ const publishAVideo = asyncHandler( async (req, res) => {
     if (!videoFileLocalFilePath)
       throw new ApiError(400, "Video File Must be Required");
   
-    // fetch local thumbnail file path
+
     let thumbnailLocalFilePath = null;
     if (req.files && req.files.thumbnail && req.files.thumbnail.length > 0) {
       thumbnailLocalFilePath = req.files.thumbnail[0].path;
@@ -244,18 +224,16 @@ const publishAVideo = asyncHandler( async (req, res) => {
     if (!thumbnailLocalFilePath)
       throw new ApiError(400, "Thumbnail File Must be Required");
   
-    // check if connection closed then abort operations else continue
   if (req.customConnectionClosed) {
     console.log("Connection closed, aborting video and thumbnail upload...");
     console.log("All resources Cleaned up & request closed...");
-    return; // Preventing further execution
+    return; 
   }
 
 
     const videoFile = await uploadOnCloudinary(videoFileLocalFilePath);
     if (!videoFile) throw new ApiError(500, "Error while Uploading Video File");
 
-     // check if connection closed then delete video and abort operations else continue
   if (req.customConnectionClosed) {
     console.log(
       "Connection closed!!! deleting video and aborting thumbnail upload..."
@@ -263,22 +241,21 @@ const publishAVideo = asyncHandler( async (req, res) => {
     await deleteVideoOnCloudinary(videoFile.url);
     fs.unlinkSync(thumbnailLocalFilePath);
     console.log("All resources Cleaned up & request closed...");
-    return; // Preventing further execution
+    return; 
   }
   
     const thumbnailFile = await uploadOnCloudinary(thumbnailLocalFilePath);
     if (!thumbnailFile)
       throw new ApiError(500, "Error while uploading thumbnail file");
-  
-      // check if connection closed then delete video & thumbnail and abort db operation else continue
-  if (req.customConnectionClosed) {
+
+      if (req.customConnectionClosed) {
     console.log(
       "Connection closed!!! deleting video & thumbnail and aborting db operation..."
     );
     await deleteVideoOnCloudinary(videoFile.url);
     await deleteImageOnCloudinary(thumbnailFile.url);
     console.log("All resources Cleaned up & request closed...");
-    return; // Preventing further execution
+    return; 
   }
 
     console.log("updating db...");
@@ -294,8 +271,7 @@ const publishAVideo = asyncHandler( async (req, res) => {
 
     if (!video) throw new ApiError(500, "Error while Publishing Video");
 
-    // check if connection closed then delete video & thumbnail & dbEntry and abort response else continue
-  if (req.customConnectionClosed) {
+    if (req.customConnectionClosed) {
     console.log(
       "Connection closed!!! deleting video & thumbnail & dbEntry and aborting response..."
     );
@@ -314,7 +290,6 @@ const publishAVideo = asyncHandler( async (req, res) => {
 });
 
 const getVideoById = asyncHandler(async (req, res) => {
-    //TODO: get video by id
 
     const { videoId } = req.params;
 
@@ -324,13 +299,13 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   const video = await Video.aggregate([
     {
-      // chechk if video with same id is publiched ..
+
       $match: {
         _id: new mongoose.Types.ObjectId(videoId),
         isPublished: true,
       },
     },
-    // get all likes array
+   
     {
       $lookup: {
         from: "likes",
@@ -352,7 +327,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         ],
       },
     },
-    // get all dislikes array
+
     {
       $lookup: {
         from: "likes",
@@ -374,7 +349,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         ],
       },
     },
-    // adjust shapes of likes and dislikes
+
     {
       $addFields: {
         likes: {
@@ -397,7 +372,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
       },
     },
-    // fetch owner details
+
     {
       $lookup: {
         from: "users",
@@ -418,7 +393,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     {
       $unwind: "$owner",
     },
-    // added like fields
+  
     {
       $project: {
         videoFile: 1,
@@ -467,25 +442,22 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
 
-    //TODO: update video details like title, description, thumbnail
     const { videoId } = req.params;
     const { title, description } = req.body;
   
-    // Validations
+
     if (!isValidObjectId(videoId)) throw new APIError(400, "Invalid VideoId...");
     const thumbnailLocalFilePath = req.file?.path;
     if (!title && !description && !thumbnailLocalFilePath) {
       throw new ApiError(400, "At-least one field required");
     }
   
-    // check only owner can modify video
     const video = await Video.findById(videoId);
     if (!video) throw new ApiError(404, "video not found");
   
     if (video.owner.toString() !== req.user?._id.toString())
       throw new ApiError(401, "Only owner can modify video details");
-  
-    //Update based on data sent
+
     let thumbnail;
     if (thumbnailLocalFilePath) {
       thumbnail = await uploadOnCloudinary(thumbnailLocalFilePath);
@@ -497,8 +469,7 @@ const updateVideo = asyncHandler(async (req, res) => {
     if (title) video.title = title;
     if (description) video.description = description;
     if (thumbnail) video.thumbnail = thumbnail.url;
-  
-    // Save in database
+ 
     const updatedVideo = await video.save({ validateBeforeSave: false });
   
     if (!updatedVideo) {
@@ -512,7 +483,6 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 const deleteVideo = asyncHandler(async (req, res) => {
 
-    //TODO: delete video
     const { videoId } = req.params;
   if (!isValidObjectId(videoId)) throw new ApiError(400, "VideoId not found");
 

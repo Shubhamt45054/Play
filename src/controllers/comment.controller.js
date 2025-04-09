@@ -7,16 +7,10 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 const getVideoComments = asyncHandler(async (req, res) => {
-    //TODO: get all comments for a video
+
     const {videoId} = req.params
     const {page = 1, limit = 10} = req.query
-    // video ke saare comment chiye
-    // comments mei usr hai
-    // uski details hai ...
-    // aur comments pe like bhi hai ...
-    console.log(" comment mei hai ");
-    console.log(req?.user?.username);
-    console.log(videoId);
+
     if (!isValidObjectId(videoId)) throw new ApiError(400, "Invalid VideoId");
 
   const options = {
@@ -32,15 +26,11 @@ const getVideoComments = asyncHandler(async (req, res) => {
         video: new mongoose.Types.ObjectId(videoId),
       },
     },
-    // video ayi phale 
-    // sort by date
-    // Sorts the comments by their creation date (createdAt field) in descending order (newest first).
     {
       $sort: {
         createdAt: -1,
       },
     },
-    // fetch likes of Comment
     {
       $lookup: {
         from: "likes",
@@ -49,25 +39,19 @@ const getVideoComments = asyncHandler(async (req, res) => {
         as: "likes",
         pipeline: [
           {
-            // vhi likes chiye jo ki true hai ..
             $match: {
               liked: true,
             },
           },
           {
             $group: {
-              // id of group ... 
-              // kya group karna hai ..
               _id: "liked",
-              // filed name ...
-              // liked by hai likes mei usko push kare rhe owenrs mei..
               owners: { $push: "$likedBy" },
             },
           },
         ],
       },
     },
-    // now fetching dislikes
     {
       $lookup: {
         from: "likes",
@@ -89,13 +73,11 @@ const getVideoComments = asyncHandler(async (req, res) => {
         ],
       },
     },
-    // Reshape Likes and dislikes
     {
       $addFields: {
         likes: {
           $cond: {
             if: {
-              //it returns the array of owners
               $gt: [{ $size: "$likes" }, 0],
             },
             then: { $first: "$likes.owners" },
@@ -112,9 +94,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
           },
         },
       },
-      //  reshape likes and dislikes to return the owners (users) who liked
     },
-    // get owner details
     {
       $lookup: {
         from: "users",
@@ -133,7 +113,6 @@ const getVideoComments = asyncHandler(async (req, res) => {
         ],
       },
     },
-    // Unwinds the owner array to get a single object (because $lookup results in an array, but we want just one owner per comment).
     { $unwind: "$owner" },
     {
       $project: {
@@ -193,8 +172,6 @@ const getVideoComments = asyncHandler(async (req, res) => {
 })
 
 const addComment = asyncHandler(async (req, res) => {
-    // TODO: add a comment to a video
-    // video id hai , aur content hai ....
     const { videoId } = req.params;
     const { content } = req.body;
     console.log("add comment")
@@ -202,7 +179,6 @@ const addComment = asyncHandler(async (req, res) => {
   if (!isValidObjectId(videoId)) throw new ApiError(400, "Invalid VideoId");
   if (!content) throw new ApiError(400, "No Comment Found");
 
-  // comment create hi karenge because same commeent 2 baar ho sakta hai..
   const comment = await Comment.create(
     {
     content,
@@ -211,15 +187,9 @@ const addComment = asyncHandler(async (req, res) => {
     }
   )
   if (!comment) throw new ApiError(500, "Error while adding comment");
-  // yeh tak theek hai but 
-  // jab ham comment show karenge publicily 
-  // hamo avatar chiye user ka comment ke liye ,
-  // username , avatar , full name aur id , jab ham comment show 
-  // karenge aur koi uspe click kare tho id chiyegi .
      
   const { username, avatar, fullName, _id } = req.user;
 
-  // abb comment show karna hai tho user ki details bhi chiye...
   const commentInfo = {
     ...comment._doc,
     owner: { username, avatar, fullName, _id },
@@ -238,7 +208,7 @@ const addComment = asyncHandler(async (req, res) => {
 })
 
 const updateComment = asyncHandler(async (req, res) => {
-    // TODO: update a comment
+
     const { commentId } = req.params;
     const { content } = req.body;
 
@@ -266,12 +236,6 @@ const updateComment = asyncHandler(async (req, res) => {
 })
 
 const deleteComment = asyncHandler(async (req, res) => {
-    // TODO: delete a comment
-    // comment ki id ayega so ham usko delete kar denge ...
-    // comment delete karna hai ...
-    // aur likes bhi hatna hai .... likes modles mei se..
-    // jisme likes ki id match kare ...
-
     const { commentId } = req.params;
     if(!isValidObjectId(commentId)) return new ApiError(400,"Error in comment id");
 
@@ -280,7 +244,6 @@ const deleteComment = asyncHandler(async (req, res) => {
   if (!comment) throw new ApiError(500, "Error while deleting comment");
 
   const deleteLikes = await Like.deleteMany({
-    // comment: new mongoose.Types.ObjectId(commentId),
     comment: commentId,
   });
 
@@ -289,7 +252,6 @@ const deleteComment = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(200, { isDeleted: true }, "Comment deleted successfully")
     );
-
 })
 
 export {

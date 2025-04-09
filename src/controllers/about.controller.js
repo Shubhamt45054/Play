@@ -22,7 +22,7 @@ export const getAboutChannel = asyncHandler(async (req, res) => {
         foreignField: "owner",
         as: "videos",
         pipeline: [
-          // THINKME: what to do
+       
           {
             $match: {
               isPublished: true,

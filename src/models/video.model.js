@@ -1,16 +1,15 @@
 import mongoose, {Schema} from "mongoose";
 
-// apginate karne ke ability 
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const videoSchema = new Schema(
     {
         videoFile: {
-            type: String, //cloudinary url
+            type: String, 
             required: true
         },
         thumbnail: {
-            type: String, //cloudinary url
+            type: String,
             required: true
         },
         title: {
@@ -21,8 +20,6 @@ const videoSchema = new Schema(
             type: String, 
         },
         duration: {
-            // khud chiye 
-            // so cloudanry se aajyega 
             type: Number, 
             required: true
         },
@@ -39,14 +36,12 @@ const videoSchema = new Schema(
             ref: "User",
             required:true 
         }
-
     }, 
     {
         timestamps: true
     }
 )
 
-// plugin se add kar diyaa....
 videoSchema.plugin(mongooseAggregatePaginate)
 
 export const Video = mongoose.model("Video", videoSchema)

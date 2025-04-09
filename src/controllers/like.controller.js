@@ -8,7 +8,7 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
-    //TODO: toggle like on video
+
    const { videoId } = req.params;
   const { toggleLike } = req.query;
 
@@ -46,7 +46,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 })
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
-    //TODO: toggle like on comment
+
   const { commentId } = req.params;
   const { toggleLike } = req.query;
 
@@ -62,9 +62,6 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
   if (!comment) throw new ApiError(400, "no comment found");
 
-  // like with samecomment it .. and liked by ..
-  // comment id for current comment ...
-  // likedBy for given user ... 
   let userLike = await Like.find({
     comment: commentId,
     likedBy: req.user?._id,
@@ -73,19 +70,17 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
   let isLiked = false;
   let isDisLiked = false;
 
-  // like kar raka hai phale se hiii
-
   if (userLike?.length > 0) {
-    // entry is present so toggle status
+
     if (userLike[0].liked) {
-      // like is present
+
       if (reqLike) {
-        // toggle like so delete like
+
         await Like.findByIdAndDelete(userLike[0]._id);
         isLiked = false;
         isDisLiked = false;
       } else {
-        // toggle dis-like so make it dislike
+
         userLike[0].liked = false;
         let res = await userLike[0].save();
         if (!res) throw new ApiError(500, "error while updating like");
@@ -93,23 +88,19 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
         isDisLiked = true;
       }
     } else {
-      // dis-like is present
       if (reqLike) {
-        // toggle like so make it like
         userLike[0].liked = true;
         let res = await userLike[0].save();
         if (!res) throw new ApiError(500, "error while updating like");
         isLiked = true;
         isDisLiked = false;
       } else {
-        // toggle dis-like so delete dis-like
         await Like.findByIdAndDelete(userLike[0]._id);
         isLiked = false;
         isDisLiked = false;
       }
     }
   } else {
-    // entry is not present so create new
     const like = await Like.create({
       comment: commentId,
       likedBy: req.user?._id,
@@ -139,24 +130,18 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 })
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
-    //TODO: toggle like on tweet
     const { tweetId } = req.params;
   const { toggleLike } = req.query;
 
   if (!isValidObjectId(tweetId)) throw new ApiError(400, "invalid tweetId");
-  // tweet lele aao 
   const tweet = await Tweet.findById(tweetId);
   if (!tweet) throw new ApiError(400, "no tweet found");
 
-  // like laoo
   let isLiked = await Like.find({ tweet: tweetId, likedBy: req.user?._id });
-
-  // delete hai agr phale se tho
   if (isLiked?.length > 0) {
     await Like.findByIdAndDelete(isLiked[0]._id);
     isLiked = false;
   } else {
-    // else create 
     const like = await Like.create({ tweet: tweetId, likedBy: req.user?._id });
     if (!like) throw new ApiError(500, "error while toggling like");
     isLiked = true;
@@ -177,10 +162,6 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 )
 
 const getLikedVideos = asyncHandler(async (req, res) => {
-    //TODO: get all liked videos
-
-    // like jisme video null na hoo...
-    // aur liked bhi ho current user se...
      const likedVideos = await Like.aggregate([
     {
       $match: {
@@ -196,7 +177,6 @@ const getLikedVideos = asyncHandler(async (req, res) => {
         as: "video",
         pipeline: [
           {
-            // user ki id hai , abb current detail leke aao 
             $lookup: {
               from: "users",
               localField: "owner",
@@ -245,7 +225,6 @@ const getLikedVideos = asyncHandler(async (req, res) => {
 
 })
 
-// combine controller for likes ...
 const toggleLike = asyncHandler(async (req, res) => {
     console.log("Hello toggling like");
     const { toggleLike, commentId, videoId, tweetId } = req.query;
@@ -295,16 +274,12 @@ const toggleLike = asyncHandler(async (req, res) => {
     let isDisLiked = false;
   
     if (userLike?.length > 0) {
-      // entry is present so toggle status
       if (userLike[0].liked) {
-        // like is present
         if (reqLike) {
-          // toggle like so delete like
           await Like.findByIdAndDelete(userLike[0]._id);
           isLiked = false;
           isDisLiked = false;
         } else {
-          // toggle dis-like so make it dislike
           userLike[0].liked = false;
           let res = await userLike[0].save();
           if (!res) throw new ApiError(500, "error while updating like");
@@ -312,16 +287,13 @@ const toggleLike = asyncHandler(async (req, res) => {
           isDisLiked = true;
         }
       } else {
-        // dis-like is present
         if (reqLike) {
-          // toggle like so make it like
           userLike[0].liked = true;
           let res = await userLike[0].save();
           if (!res) throw new ApiError(500, "error while updating like");
           isLiked = true;
           isDisLiked = false;
         } else {
-          // toggle dis-like so delete dis-like
           await Like.findByIdAndDelete(userLike[0]._id);
           isLiked = false;
           isDisLiked = false;

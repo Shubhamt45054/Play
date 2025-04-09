@@ -14,12 +14,7 @@ import { checkAborted } from '../middlewares/abortedRequest.middleware.js';
 import {upload} from "../middlewares/multer.middleware.js"
 
 const router = Router();
- // Apply verifyJWT middleware to all routes in this file
 router.route("/all/option").get(getAllVideosByOption);
-
-// router.use(verifyJWT);
-// we need to use verifyJwt and check user 
-// as in some cases bina login ke bhi work karna chiye, but usr hai tho uski info chiye..
 
 router
     .route("/")
@@ -40,8 +35,6 @@ router
         checkAborted,
         publishAVideo
     );
-
-
 
 router
     .route("/:videoId")

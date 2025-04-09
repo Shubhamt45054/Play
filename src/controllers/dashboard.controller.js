@@ -7,13 +7,7 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 const getChannelStats = asyncHandler(async (req, res) => {
-    // TODO: Get the channel stats like total video views, total subscribers, total videos, total likes etc.
-
-    // empty object 
   const channelStats = {};
-
-  // video states ...
-  // video mei owner wali videos...
   const videoStates = await Video.aggregate([
     {
       $match: {
@@ -22,14 +16,13 @@ const getChannelStats = asyncHandler(async (req, res) => {
     },
     {
       $group: {
-        _id: null,  // Grouping all the videos together
-      totalViews: { $sum: "$views" },  // Sums up the views for all videos
-      totalVideos: { $count: {} },  // Counts the total number of videos
+        _id: null, 
+      totalViews: { $sum: "$views" }, 
+      totalVideos: { $count: {} },
       },
     },
   ]);
 
-  // subsriber kitne hai ...
   const subscriber = await Subscription.aggregate([
     {
       $match: {
@@ -37,31 +30,27 @@ const getChannelStats = asyncHandler(async (req, res) => {
       },
     },
     {
-      $count: "totalSubscribers", // Counts the number of subscribers
+      $count: "totalSubscribers",
     },
   ]);
 
-  // total likes .. video 
   const totalLikes = await Like.aggregate([
     {
       $match: {
-        video: { $ne: null }, // Only considers records where the "video" field is not null
+        video: { $ne: null }, 
         liked: true,
       },
     },
-    // like se video liye , abb video ke likes hai
-    // abb video ki id ko replace ki video say jo ki owner ki hai sirf..
-    // use claculate karenge likes..
     {
       $lookup: {
         from: "videos",
-        localField: "video",  // References the video ID in the "likes" collection
-        foreignField: "_id", // Joins it with the "videos" collection
+        localField: "video", 
+        foreignField: "_id",
         as: "channelVideo",
         pipeline: [
           {
             $match: {
-              owner: req.user?._id, // Filters only videos owned by the current user
+              owner: req.user?._id,
             },
           },
           {
@@ -75,20 +64,20 @@ const getChannelStats = asyncHandler(async (req, res) => {
     {
       $addFields: {
         channelVideo: {
-          $first: "$channelVideo", // Extracts the first matched video
+          $first: "$channelVideo", 
         },
       },
     },
     {
       $match: {
-        channelVideo: { $ne: null }, // Ensures that the video belongs to the user
+        channelVideo: { $ne: null }, 
       },
     },
     {
       $group: {
-        _id: null, // Groups all likes together
+        _id: null, 
         likeCount: {
-          $sum: 1, // Sums the total number of likes
+          $sum: 1, 
         },
       },
     },
@@ -110,21 +99,20 @@ const getChannelStats = asyncHandler(async (req, res) => {
 })
 
 const getChannelVideos = asyncHandler(async (req, res) => {
-    // TODO: Get all the videos uploaded by the channel
+
     const allVideos = await Video.aggregate([
         {
-            // sari video jiske owner user hai ...
           $match: {
             owner: new mongoose.Types.ObjectId(req.user?._id),
           },
         },
         {
-            // sort karo created at ke hisab se...
+
           $sort: {
             createdAt: -1,
           },
         },
-        // lookup for likes
+
         {
           $lookup: {
             from: "likes",
@@ -140,7 +128,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
             ],
           },
         },
-        // lookup for dislikes
+
         {
           $lookup: {
             from: "likes",
@@ -156,7 +144,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
             ],
           },
         },
-        // lookup for comments
+
         {
           $lookup: {
             from: "comments",

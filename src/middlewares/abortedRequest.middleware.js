@@ -5,7 +5,6 @@ const checkAborted = asyncHandler((req, res, next) => {
     console.log("Request aborted by client!!!");
     req.customConnectionClosed = true;
   });
-  // Call the next middleware in the stack
   req.customConnectionClosed = false;
   next();
 });

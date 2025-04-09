@@ -11,8 +11,6 @@ import {
 
 const router = Router();
 
-// http://localhost:3000/api/v1/about/user/...
-
 router.route("/:userId").get(getAboutChannel);
 router.route("/description").patch(verifyJWT, addChannelDescription);
 router.route("/link/add").post(verifyJWT, addLink);

@@ -1,5 +1,6 @@
 import mongoose,{Schema} from "mongoose";
 
+
 const playlistSchema = Schema({
     name: {
         type: String,

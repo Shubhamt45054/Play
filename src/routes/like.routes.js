@@ -12,7 +12,7 @@ const router = Router();
 
 console.log("like route mei hoo ..");
 
-router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
+router.use(verifyJWT); 
 
 router.route("/").patch(toggleLike);
 router.route("/comment/:commentId").patch(toggleCommentLike);

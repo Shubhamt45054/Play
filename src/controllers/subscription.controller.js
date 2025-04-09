@@ -7,7 +7,7 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 
 
 const toggleSubscription = asyncHandler(async (req, res) => {
-    // TODO: toggle subscription
+
     const { channelId } = req.params;
 
     if (!isValidObjectId(channelId)) throw new ApiError(400, "Invalid ChannelId");
@@ -49,20 +49,20 @@ const toggleSubscription = asyncHandler(async (req, res) => {
 
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
-  // if channel id is not provided ...
+
     const { channelId = req.user?._id } = req.params;
-      console.log(channelId);
+
   if (!isValidObjectId(channelId)) throw new ApiError(400, "Invalid ChannelId");
 
   const subscriberList = await Subscription.aggregate([
     {
-      // id match karo channel ki...
+
       $match: {
         channel: new mongoose.Types.ObjectId(channelId),
       },
     },
     {
-      // subscribeed channels..
+
       $lookup: {
         from: "subscriptions",
         localField: "channel",
@@ -71,10 +71,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
       },
     },
     {
-      // channels details...
-      // kuch channel subsrcibe kiye hai maine .. 
-      // uski detail user id se..
-      // aur unke subcriber count...
+
       $lookup: {
         from: "users",
         localField: "subscriber",
@@ -148,14 +145,13 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid subscriberId");
 
   const subscribedChannels = await Subscription.aggregate([
-    // get all subscribed channels
-    // jisme ham subscriber hai ...
+
     {
       $match: {
         subscriber: new mongoose.Types.ObjectId(subscriberId),
       },
     },
-    // get channel details
+
     {
       $lookup: {
         from: "users",
@@ -176,7 +172,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     {
       $unwind: "$channel",
     },
-    // get channel's subscribers
+
     {
       $lookup: {
         from: "subscriptions",
@@ -186,7 +182,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
       },
     },
     {
-      // logic if current user has subscribed the channel or not
+
       $addFields: {
         "channel.isSubscribed": {
           $cond: {
@@ -195,7 +191,6 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
             else: false,
           },
         },
-        // channel subscriber count
         "channel.subscribersCount": {
           $size: "$channelSubscribers",
         },

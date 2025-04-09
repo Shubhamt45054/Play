@@ -8,8 +8,6 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 const createPlaylist = asyncHandler(async (req, res) => {
     const {name, description} = req.body
 
-    //TODO: create playlist
-
   if (!name) throw new ApiError(400, "Name required");
 
   const playlist = await Playlist.create({
@@ -26,16 +24,11 @@ const createPlaylist = asyncHandler(async (req, res) => {
 })
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
-
-    //TODO: get user playlists
-    // user id lelo....
     const { userId } = req.params;
   if (!isValidObjectId(userId))
     throw new ApiError(400, "Valid userId required");
-
-  // THINKME : playlist thumbnail
     console.log(req.user);
-  // playlist mei owner ko user id se match karoo.., ho paye tho..
+
   const playlists = await Playlist.aggregate([
     {
       $match: {
@@ -43,7 +36,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
       },
     },
     {
-        // abb owner mei jake uski details leke aoo
+
       $lookup: {
         from: "users",
         localField: "owner",
@@ -62,7 +55,6 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
       },
     },
     {
-        // videos ki id hai video ki detial bhi chiye ..
       $lookup: {
         from: "videos",
         localField: "videos",
@@ -82,8 +74,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
       $unwind: "$owner",
     },
     {
-        // kya kya chiye , 
-        // kuch array ayengi tho sirf first chiye..
+
       $project: {
         name: 1,
         description: 1,
@@ -114,24 +105,18 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 
 const getPlaylistById = asyncHandler(async (req, res) => {
 
-    //TODO: get playlist by id
-    // playlist ki id ..
     const { playlistId } = req.params;
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(400, "plese give valid playlist id");
   }
   const playlists = await Playlist.aggregate([
     {
-        // finding playlist ...
       $match: {
         _id: new mongoose.Types.ObjectId(playlistId),
       },
     },
     {
-        // saari video leke aooo. 
-        // unka thumbnil aur views ...
-        // video ka owner ka detila chiye ek aur piple lagegai..
-        // in only been published..
+
       $lookup: {
         from: "videos",
         localField: "videos",
@@ -142,7 +127,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
             $match: { isPublished: true },
           },
           {
-            // video owners detials..
+
             $lookup: {
               from: "users",
               localField: "owner",
@@ -170,8 +155,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
       },
     },
     {
-        // abb jo playlist ka onwer hai 
-        // uski bhi detiails hai ...
+
       $lookup: {
         from: "users",
         localField: "owner",
@@ -229,11 +213,10 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
   if (!isValidObjectId(playlistId) || !isValidObjectId(videoId)) {
     throw new ApiError(400, "Please give valid id");
   }
-// valid id then update kar do...
+
   const playlist = await Playlist.findByIdAndUpdate(
     playlistId,
     {
-        // only add if alreday doesn't not exist..
       $addToSet: {
         videos: videoId,
       },
@@ -259,7 +242,6 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
 
 const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 
-    // TODO: remove video from playlist
     const { playlistId, videoId } = req.params;
     if (!isValidObjectId(playlistId) || !isValidObjectId(videoId)) {
       throw new ApiError(400, "plaese give valid video or playlist id");
@@ -293,7 +275,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
 })
 
 const deletePlaylist = asyncHandler(async (req, res) => {
-    // TODO: delete playlist
+
     const { playlistId } = req.params;
   if (!isValidObjectId(playlistId)) {
     throw new ApiError(400, "Invalid PlaylistId");
@@ -310,26 +292,19 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 })
 
 const updatePlaylist = asyncHandler(async (req, res) => {
-    //TODO: update playlist
     const { playlistId } = req.params;
     const { name, description } = req.body;
   
     if (!isValidObjectId(playlistId) || (!name && !description))
       throw new ApiError(400, "All fields required");
-  
-    // playlist leke ayee..
+
     const playlist = await Playlist.findById(playlistId);
     if (!playlist) throw new ApiError(400, "No Playlist Found");
   
-    // just in case extra space hai...
+
     playlist.name = name.trim();
     playlist.description = description.trim();
-    // playlist update kar di...
 
-    // if (name) playlist.name = name;
-    // if (description) playlist.description = description;
-  
-    // usko save kar diyaa..
     const updatedPlaylist = await playlist.save();
   
     if (!updatedPlaylist)
@@ -348,7 +323,7 @@ const getVideoSavePlaylists = asyncHandler(async (req, res) => {
     if (!isValidObjectId(videoId))
       throw new ApiError(400, "Valid videoId required");
   
-    // check if specific video is in playlist ...
+
     const playlists = await Playlist.aggregate([
       {
         $match: {

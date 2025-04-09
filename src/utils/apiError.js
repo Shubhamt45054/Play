@@ -1,7 +1,4 @@
-// its the class in node js
-// here we create basic contructor to send the mssgae 
-// also create the overwrite part to add things
-// using supper overwriting
+
 class ApiError extends Error {
     constructor(
         statusCode,
@@ -9,11 +6,9 @@ class ApiError extends Error {
         errors = [],
         stack = ""
     ){
-        // to overwrite the error 
+
         super(message)
         this.statusCode = statusCode
-        // whats in this.data filed
-        // adding new fileds...
         this.data = null
         this.message = message
         this.success = false;

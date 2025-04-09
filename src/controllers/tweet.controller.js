@@ -7,7 +7,6 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 const createTweet = asyncHandler(async (req, res) => {
-    //TODO: create tweet
     const { tweet } = req.body;
 
     if (!tweet) throw new ApiError(400, "Tweet content required");
@@ -35,28 +34,23 @@ const createTweet = asyncHandler(async (req, res) => {
 })
 
 const getUserTweets = asyncHandler(async (req, res) => {
-    // TODO: get user tweets
-    // user id 
+
     const { userId } = req.params;
 
-    // validate user id
   if (!isValidObjectId(userId))
     throw new ApiError(400, "Invalid userId: " + userId);
 
-  // time to get all user tweet..
   const allTweets = await Tweet.aggregate([
     {
       $match: {
         owner: new mongoose.Types.ObjectId(userId),
       },
     },
-    // sort by latest
     {
       $sort: {
         createdAt: -1,
       },
     },
-    // fetch likes of tweet by using id ...
     {
       $lookup: {
         from: "likes",
@@ -72,7 +66,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
           {
             $group: {
               _id: "liked",
-              // saare person push karo jisne like kiya hai ..
               owners: { $push: "$likedBy" },
             },
           },
@@ -100,7 +93,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
         ],
       },
     },
-    // Reshape Likes and dislikes
     {
       $addFields: {
         likes: {
@@ -123,7 +115,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
         },
       },
     },
-    // get owner details
     {
       $lookup: {
         from: "users",
@@ -142,7 +133,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
       },
     },
     {
- //The $unwind operator is used to flatten the owner array into individual objects..
       $unwind: "$owner",
     },
     {
@@ -185,7 +175,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
 })
 
 const updateTweet = asyncHandler(async (req, res) => {
-    //TODO: update tweet
     const { tweetId } = req.params;
     const { tweet } = req.body;
     if (!isValidObjectId(tweetId)) throw new ApiError(400, "Invalid tweetId");
@@ -208,16 +197,12 @@ const updateTweet = asyncHandler(async (req, res) => {
 })
 
 const deleteTweet = asyncHandler(async (req, res) => {
-    //TODO: delete tweet
     const {tweetId} = req.params;
     
     if(!isValidObjectId(tweetId)) return new ApiError(400,"Invalid TweetId");
-
-    // await needed
     const tweetRes = await Tweet.findByIdAndDelete(tweetId);
 
     if (!tweetRes) throw new ApiError(500, "tweet not found");
-    // likes bhi delete karne hai tweetse ke ..
     const deleteLikes = await Like.deleteMany({
         tweet: new mongoose.Types.ObjectId(tweetId),
      });
@@ -228,18 +213,14 @@ const deleteTweet = asyncHandler(async (req, res) => {
 })
 
 const getAllTweets = asyncHandler(async (req, res) => {
-
-    // sarre tweets chiye ..
     console.log("Hello");
 
     const allTweets = await Tweet.aggregate([
-      // sort by latest
       {
         $sort: {
           createdAt: -1,
         },
       },
-      // fetch likes of tweet
       {
         $lookup: {
           from: "likes",
@@ -262,7 +243,6 @@ const getAllTweets = asyncHandler(async (req, res) => {
         },
       },
       {
-        // fetch dislikes ..
         $lookup: {
           from: "likes",
           localField: "_id",
@@ -283,7 +263,6 @@ const getAllTweets = asyncHandler(async (req, res) => {
           ],
         },
       },
-      // Reshape Likes and dislikes
       {
         $addFields: {
           likes: {
@@ -306,7 +285,6 @@ const getAllTweets = asyncHandler(async (req, res) => {
           },
         },
       },
-      // get owner details...
       {
         $lookup: {
           from: "users",
@@ -386,13 +364,11 @@ const getAllTweets = asyncHandler(async (req, res) => {
           },
         },
       },
-      // sort by latest
       {
         $sort: {
           createdAt: -1,
         },
       },
-      // fetch likes of tweet
       {
         $lookup: {
           from: "likes",
@@ -435,7 +411,6 @@ const getAllTweets = asyncHandler(async (req, res) => {
           ],
         },
       },
-      // Reshape Likes and dislikes
       {
         $addFields: {
           likes: {
@@ -458,7 +433,6 @@ const getAllTweets = asyncHandler(async (req, res) => {
           },
         },
       },
-      // get owner details
       {
         $lookup: {
           from: "users",
